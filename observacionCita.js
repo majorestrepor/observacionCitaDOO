@@ -1,107 +1,137 @@
-document.addEventListener("DOMContentLoaded", () => {
-    setInterval(actualizarReloj, 1000);
-});
 
-function obtenerDatosCita() {
+const citasData = {
+    '12345': {
+        medico: "Dr. Juan Pérez",
+        citaAsociada: "Confama - Piso 1-101",
+        observaciones: ["Observación 1 de la cita 12345", "Observación 2 de la cita 12345"]
+    },
+    '67890': {
+        medico: "Dra. María Gómez",
+        citaAsociada: "CityMedica - Piso 2-202",
+        observaciones: ["Observación 1 de la cita 67890"]
+    },
+    '66165161': {
+        medico: "Dr. Carlos Ramírez",
+        citaAsociada: "El Prado - Piso 4-304",
+        observaciones: ["Observación 1 de la cita 66165161"]
+    }
+};
+
+
+function validarLongitudObservacion(observacion) {
+    const longitud = observacion.trim().length; 
+    return longitud >= 1 && longitud <= 255;
+}
+
+function buscarCita() {
     const idCita = document.getElementById('idCita').value;
     const errorIdCita = document.getElementById('errorIdCita');
 
-    // Validar la longitud del ID de la cita
+    
+    errorIdCita.textContent = '';
+
+   
     if (idCita.length < 1 || idCita.length > 10) {
-        errorIdCita.style.display = "block";
-        errorIdCita.textContent = "El ID de la cita debe tener entre 1 y 10 números.";
+        errorIdCita.textContent = "El ID de la cita debe tener entre 1 y 10 caracteres.";
         return;
-    } else {
-        errorIdCita.style.display = "none";
     }
 
-    // Simular datos recuperados (puedes conectar esto con una API)
-    if (idCita === "12345") {
-        document.getElementById('cita').value = "CC-45451313-Piso 1-101-Confama-Rionegro-Antioquia";
-        document.getElementById('medico').value = "Dr. Juan Pérez";
-        cargarObservacionesPrevias(idCita);
+    
+    const citaData = citasData[idCita];
+
+    if (citaData) {
+     
+        document.getElementById('cita').value = citaData.citaAsociada;
+        document.getElementById('medico').value = citaData.medico;
+
+       
+        mostrarObservaciones(citaData.observaciones);
     } else {
-        document.getElementById('cita').value = "";
-        document.getElementById('medico').value = "";
+        errorIdCita.textContent = "Cita no encontrada.";
+        document.getElementById('cita').value = '';
+        document.getElementById('medico').value = '';
         document.getElementById('observacionesContainer').innerHTML = ''; // Limpiar observaciones
     }
 }
 
-function preguntarObservaciones() {
-    document.getElementById('cantidadObservacionesContainer').style.display = "block";
-}
+function mostrarObservaciones(observaciones) {
+    const container = document.getElementById('observacionesContainer');
+    container.innerHTML = ''; 
 
-function mostrarObservaciones() {
-    const cantidad = document.getElementById('cantidadObservaciones').value;
-    const observacionesContainer = document.getElementById('observacionesContainer');
-    observacionesContainer.innerHTML = '';
+    observaciones.forEach((observacion, index) => {
+        const numeroObservacion = `obs${(index + 1).toString().padStart(3, '0')}`; // Crear identificador único (obs001, obs002)
+        
+        const div = document.createElement('div');
+        div.classList.add('observacion');
 
-    for (let i = 1; i <= cantidad; i++) {
-        const observacionDiv = document.createElement('div');
-        observacionDiv.classList.add('form-group');
-        observacionDiv.innerHTML = `
-            <label for="observacion${i}">Observación ${i}</label>
-            <textarea id="observacion${i}" rows="4" placeholder="Ingrese la observación ${i}" maxlength="255"></textarea>
+       
+        div.innerHTML = `
+            <label for="observacion${index}">${numeroObservacion}</label>
+            <textarea id="observacion${index}" rows="4">${observacion}</textarea>
+            <span class="error-message" id="errorObservacion${index}"></span>
+            <button class="guardarBtn" onclick="guardarObservacion(${index})">Guardar</button>
+            <button class="eliminarBtn" onclick="eliminarObservacion(${index})">Eliminar</button>
         `;
-        observacionesContainer.appendChild(observacionDiv);
-    }
+        container.appendChild(div);
+    });
 }
 
-function crearObservacion() {
+
+function guardarObservacion(index) {
     const idCita = document.getElementById('idCita').value;
-    const cantidadObservaciones = document.getElementById('cantidadObservaciones').value;
-    const observacionesContainer = document.getElementById('observacionesContainer');
-    let hayError = false;
+    const observacion = document.getElementById(`observacion${index}`).value;
+    const errorMensaje = document.getElementById(`errorObservacion${index}`);
 
-    if (!idCita) {
-        alert("Debe ingresar un ID de cita válido.");
-        hayError = true;
+  
+    if (!validarLongitudObservacion(observacion)) {
+        errorMensaje.textContent = 'La observación debe tener entre 1 y 255 caracteres.';
+        return;
     }
 
-    for (let i = 1; i <= cantidadObservaciones; i++) {
-        const observacion = document.getElementById(`observacion${i}`).value;
-        if (observacion.length < 1) {
-            alert(`La observación ${i} no puede estar vacía.`);
-            hayError = true;
-        }
-    }
+    errorMensaje.textContent = '';
 
-    if (!hayError) {
-        alert("Observación creada para la cita: " + idCita);
-        // Aquí puedes enviar los datos a un servidor o guardarlos localmente
+    const citaData = citasData[idCita];
+    if (citaData) {
+        citaData.observaciones[index] = observacion;
+        alert(`Observación actualizada: ${observacion}`);
     }
 }
 
-function cargarObservacionesPrevias(idCita) {
-    // Simular la carga de observaciones desde una base de datos o API
-    const observacionesContainer = document.getElementById('observacionesContainer');
-    observacionesContainer.innerHTML = '';
 
-    // Suponiendo que hay 2 observaciones previas para la cita 12345
-    if (idCita === "12345") {
-        const observacionesPrevias = ["Observación previa 1", "Observación previa 2"];
+function agregarObservacion() {
+    const idCita = document.getElementById('idCita').value;
+    const citaData = citasData[idCita];
 
-        observacionesPrevias.forEach((texto, index) => {
-            const observacionDiv = document.createElement('div');
-            observacionDiv.classList.add('form-group');
-            observacionDiv.innerHTML = `
-                <label for="observacionPrev${index + 1}">Observación Previa ${index + 1}</label>
-                <textarea id="observacionPrev${index + 1}" rows="4" disabled>${texto}</textarea>
-            `;
-            observacionesContainer.appendChild(observacionDiv);
-        });
+    if (citaData) {
+        const container = document.getElementById('observacionesContainer');
+        const newIndex = citaData.observaciones.length;
+        const numeroObservacion = `obs${(newIndex + 1).toString().padStart(3, '0')}`;
+
+        const div = document.createElement('div');
+        div.classList.add('observacion');
+        div.innerHTML = `
+            <label for="observacion${newIndex}">${numeroObservacion}</label>
+            <textarea id="observacion${newIndex}" rows="4" placeholder="Nueva observación"></textarea>
+            <span class="error-message" id="errorObservacion${newIndex}"></span>
+            <button class="guardarBtn" onclick="guardarObservacion(${newIndex})">Guardar</button>
+            <button class="eliminarBtn" onclick="eliminarObservacion(${newIndex})">Eliminar</button>
+        `;
+        container.appendChild(div);
+
+        
+        citaData.observaciones.push("");
     }
 }
 
-function actualizarReloj() {
-    const ahora = new Date();
-    const hora = ahora.getHours().toString().padStart(2, '0');
-    const minutos = ahora.getMinutes().toString().padStart(2, '0');
-    const segundos = ahora.getSeconds().toString().padStart(2, '0');
-    const dia = ahora.getDate().toString().padStart(2, '0');
-    const mes = (ahora.getMonth() + 1).toString().padStart(2, '0');
-    const anio = ahora.getFullYear();
-    
-    const reloj = document.getElementById('reloj');
-    reloj.innerText = `${dia}/${mes}/${anio} ${hora}:${minutos}:${segundos}`;
+
+function eliminarObservacion(index) {
+    const idCita = document.getElementById('idCita').value;
+    const citaData = citasData[idCita];
+
+    if (citaData) {
+       
+        citaData.observaciones.splice(index, 1);
+        alert(`Observación eliminada`);
+        buscarCita(); 
+    }
 }
